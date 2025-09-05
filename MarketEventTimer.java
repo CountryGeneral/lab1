@@ -1,9 +1,12 @@
 import java.util.*;
 import java.util.Calendar;
+import javax.swing.SwingUtilities;
 
 public class MarketEventTimer extends TimerTask {
     private StockMarketApplication app;
     private Timer timer;
+    private boolean running = false;
+    private long nextEventTime = 0;
     private String[] events = {
         "Federal Reserve announcement",
         "Major earnings report",
@@ -18,7 +21,10 @@ public class MarketEventTimer extends TimerTask {
     }
     
     public void start() {
+        running = true;
+        nextEventTime = System.currentTimeMillis() + 20000; // First event in 20 seconds
         scheduleSpecificTimeEvents();
+        SwingUtilities.invokeLater(() -> app.updateNextEventStatus("First event in 20 seconds"));
         System.out.println("MarketEventTimer started - events scheduled at specific times");
     }
     
@@ -50,6 +56,14 @@ public class MarketEventTimer extends TimerTask {
         @Override
         public void run() {
             triggerMarketEvent();
+            
+            // Update next event time
+            if (eventNumber < 5) {
+                nextEventTime = System.currentTimeMillis() + (20000 + (eventNumber * 2000)); // Next event timing
+            } else {
+                nextEventTime = 0; // No more events
+                SwingUtilities.invokeLater(() -> app.updateNextEventStatus("All events completed"));
+            }
         }
     }
     
@@ -65,6 +79,18 @@ public class MarketEventTimer extends TimerTask {
     public void stop() {
         if (timer != null) {
             timer.cancel();
+            running = false;
+            SwingUtilities.invokeLater(() -> app.updateNextEventStatus("Events stopped"));
         }
+    }
+    
+    public boolean isRunning() {
+        return running;
+    }
+    
+    public int getSecondsToNextEvent() {
+        if (!running || nextEventTime == 0) return 0;
+        long secondsRemaining = (nextEventTime - System.currentTimeMillis()) / 1000;
+        return Math.max(0, (int)secondsRemaining);
     }
 }

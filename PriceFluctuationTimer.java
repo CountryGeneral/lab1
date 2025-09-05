@@ -1,8 +1,11 @@
 import java.util.*;
+import javax.swing.SwingUtilities;
 
 public class PriceFluctuationTimer extends TimerTask {
     private StockMarketApplication app;
     private Timer timer;
+    private boolean running = false;
+    private long startTime;
     
     public PriceFluctuationTimer(StockMarketApplication app) {
         this.app = app;
@@ -11,6 +14,9 @@ public class PriceFluctuationTimer extends TimerTask {
     
     public void start() {
         timer.scheduleAtFixedRate(this, 0, 2000);
+        running = true;
+        startTime = System.currentTimeMillis();
+        SwingUtilities.invokeLater(() -> app.updatePriceTimerStatus("RUNNING (every 2s)"));
         System.out.println("PriceFluctuationTimer started - updates every 2 seconds");
     }
     
@@ -39,11 +45,25 @@ public class PriceFluctuationTimer extends TimerTask {
             System.out.printf("Updated %s: $%.2f (%.2f%%)%n", 
                             symbol, newPrice, changePercent * 100);
         }
+        
+        // Update the GUI display on EDT
+        SwingUtilities.invokeLater(() -> app.updateStockDisplay());
     }
     
     public void stop() {
         if (timer != null) {
             timer.cancel();
+            running = false;
+            SwingUtilities.invokeLater(() -> app.updatePriceTimerStatus("STOPPED"));
         }
+    }
+    
+    public boolean isRunning() {
+        return running;
+    }
+    
+    public int getSecondsRunning() {
+        if (!running) return 0;
+        return (int)((System.currentTimeMillis() - startTime) / 1000);
     }
 }
