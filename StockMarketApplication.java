@@ -63,8 +63,8 @@ public class StockMarketApplication extends JFrame {
         stopPricesButton = new JButton("Stop Price Updates");
         startEventsButton = new JButton("Start Market Events");
         stopEventsButton = new JButton("Stop Market Events");
-        JButton startVolumeButton = new JButton("Start Volume Updates");
-        JButton stopVolumeButton = new JButton("Stop Volume Updates");
+        startVolumeButton = new JButton("Start Volume Updates");
+        stopVolumeButton = new JButton("Stop Volume Updates");
         
         priceTimerLabel = new JLabel("Price Timer: STOPPED");
         nextEventLabel = new JLabel("Next Event: Not scheduled");
@@ -132,6 +132,18 @@ public class StockMarketApplication extends JFrame {
         stopEventsButton.addActionListener(e -> {
             if (marketEventTimer != null) {
                 marketEventTimer.stop();
+            }
+        });
+        
+        startVolumeButton.addActionListener(e -> {
+            if (tradingVolumeTimer != null) {
+                tradingVolumeTimer.start();
+            }
+        });
+        
+        stopVolumeButton.addActionListener(e -> {
+            if (tradingVolumeTimer != null) {
+                tradingVolumeTimer.stop();
             }
         });
     }
