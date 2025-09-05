@@ -27,13 +27,9 @@ public class TradingVolumeTimer extends TimerTask {
             timer.cancel();
             timer = new Timer("TradingVolumeTimer");
         }
-        TradingVolumeTimer newTask = new TradingVolumeTimer(app);
-        newTask.timer = timer;
-        newTask.running = true;
-        newTask.nextUpdateTime = System.currentTimeMillis() + 5000;
-        timer.schedule(newTask, 5000, 15000);
-        this.running = true;
-        this.nextUpdateTime = newTask.nextUpdateTime;
+        running = true;
+        nextUpdateTime = System.currentTimeMillis() + 5000;
+        timer.schedule(this, 5000, 15000);
         System.out.println("TradingVolumeTimer started - updates every 15 seconds (periodic)");
     }
     
@@ -94,7 +90,7 @@ public class TradingVolumeTimer extends TimerTask {
     public int getSecondsToNextUpdate() {
         if (!running || nextUpdateTime == 0) return 0;
         long secondsRemaining = (nextUpdateTime - System.currentTimeMillis()) / 1000;
-        return Math.max(1, (int)secondsRemaining);
+        return Math.max(0, (int)secondsRemaining);
     }
     
     public Map<String, Integer> getVolumes() {
