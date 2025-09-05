@@ -30,14 +30,15 @@ public class MarketEventTimer extends TimerTask {
     
     private void scheduleSpecificTimeEvents() {
         Calendar now = Calendar.getInstance();
-        Random random = new Random();
         
-        // Schedule events at specific times (every 15-30 seconds)
+        // Schedule events at specific times (every 20 seconds)
         for (int i = 1; i <= 5; i++) {
             Calendar eventTime = (Calendar) now.clone();
-            eventTime.add(Calendar.SECOND, i * 20 + random.nextInt(10));
+            eventTime.add(Calendar.SECOND, i * 20);
             
             timer.schedule(new EventTask(i), eventTime.getTime());
+            
+            System.out.println("Event " + i + " scheduled for " + eventTime.getTime());
         }
     }
     
@@ -55,13 +56,15 @@ public class MarketEventTimer extends TimerTask {
         
         @Override
         public void run() {
+            System.out.println("Event " + eventNumber + " fired!");
             triggerMarketEvent();
             
-            // Update next event time
+            // Update next event time - calculate when the NEXT event will happen
             if (eventNumber < 5) {
-                nextEventTime = System.currentTimeMillis() + (20000 + (eventNumber * 2000)); // Next event timing
+                nextEventTime = System.currentTimeMillis() + (20000); // Next event in 20 seconds
             } else {
                 nextEventTime = 0; // No more events
+                running = false;
                 SwingUtilities.invokeLater(() -> app.updateNextEventStatus("All events completed"));
             }
         }

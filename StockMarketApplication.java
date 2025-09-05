@@ -73,7 +73,7 @@ public class StockMarketApplication extends JFrame {
         add(stockDisplayPanel, BorderLayout.CENTER);
         add(controlPanel, BorderLayout.SOUTH);
         
-        pack();
+        setSize(660, 300);
         setLocationRelativeTo(null);
     }
     
