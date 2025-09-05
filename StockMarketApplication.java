@@ -40,15 +40,18 @@ public class StockMarketApplication extends JFrame {
         statusLabel = new JLabel("Market Status: STARTING...", JLabel.CENTER);
         statusLabel.setFont(new Font("Arial", Font.BOLD, 14));
         
-        stockDisplayPanel = new JPanel(new GridLayout(4, 2, 10, 10));
-        stockDisplayPanel.setBorder(BorderFactory.createTitledBorder("Stock Prices"));
+        stockDisplayPanel = new JPanel(new GridLayout(4, 3, 10, 10));
+        stockDisplayPanel.setBorder(BorderFactory.createTitledBorder("Stock Data"));
         
         stockDisplayPanel.add(new JLabel("Symbol", JLabel.CENTER));
         stockDisplayPanel.add(new JLabel("Price", JLabel.CENTER));
+        stockDisplayPanel.add(new JLabel("Volume", JLabel.CENTER));
         
         for (String symbol : stocks.keySet()) {
+            StockData stock = stocks.get(symbol);
             stockDisplayPanel.add(new JLabel(symbol, JLabel.CENTER));
-            stockDisplayPanel.add(new JLabel("$" + stocks.get(symbol).getCurrentPrice(), JLabel.CENTER));
+            stockDisplayPanel.add(new JLabel("$" + String.format("%.2f", stock.getCurrentPrice()), JLabel.CENTER));
+            stockDisplayPanel.add(new JLabel(String.format("%,d", stock.getVolume()), JLabel.CENTER));
         }
         
         controlPanel = new JPanel(new GridLayout(3, 2, 5, 5));
@@ -136,14 +139,18 @@ public class StockMarketApplication extends JFrame {
     
     public void updateStockDisplay() {
         Component[] components = stockDisplayPanel.getComponents();
-        int componentIndex = 2; 
+        int componentIndex = 3; // Skip 3 headers now
         
         for (String symbol : stocks.keySet()) {
             if (componentIndex < components.length && components[componentIndex] instanceof JLabel) {
+                StockData stock = stocks.get(symbol);
                 JLabel priceLabel = (JLabel) components[componentIndex + 1];
-                priceLabel.setText("$" + String.format("%.2f", stocks.get(symbol).getCurrentPrice()));
+                JLabel volumeLabel = (JLabel) components[componentIndex + 2];
+                
+                priceLabel.setText("$" + String.format("%.2f", stock.getCurrentPrice()));
+                volumeLabel.setText(String.format("%,d", stock.getVolume()));
             }
-            componentIndex += 2;
+            componentIndex += 3; // Now 3 columns per stock
         }
         
         stockDisplayPanel.repaint();

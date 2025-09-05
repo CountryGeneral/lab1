@@ -32,24 +32,29 @@ public class TradingVolumeTimer extends TimerTask {
     
     private void updateTradingVolumes() {
         Random random = new Random();
+        Map<String, StockData> stocks = app.getStocks();
         
         System.out.println("=== VOLUME UPDATE ===");
         
-        for (String symbol : stockVolumes.keySet()) {
-            int currentVolume = stockVolumes.get(symbol);
+        for (String symbol : stocks.keySet()) {
+            StockData stock = stocks.get(symbol);
+            int currentVolume = stock.getVolume();
             
             // Volume can change by -20% to +30%
-            double changePercent = (random.nextDouble() - 0.3) * 0.5; // -20% to +30%
+            double changePercent = (random.nextDouble() - 0.3) * 0.5;
             int newVolume = (int)(currentVolume * (1 + changePercent));
             
-            // Keep volume reasonable (min 10k, max 500k)
+            // Keep volume reasonable
             newVolume = Math.max(10000, Math.min(500000, newVolume));
             
-            stockVolumes.put(symbol, newVolume);
+            stock.setVolume(newVolume);
             
             System.out.printf("Volume %s: %,d shares (%.1f%% change)%n", 
                             symbol, newVolume, changePercent * 100);
         }
+        
+        // Update GUI
+        SwingUtilities.invokeLater(() -> app.updateStockDisplay());
         
         System.out.println("=====================");
     }
