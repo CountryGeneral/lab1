@@ -14,10 +14,15 @@ public class StockMarketApplication extends JFrame {
     private JButton startVolumeButton, stopVolumeButton;
     private JLabel nextEventLabel;
     private JLabel priceTimerLabel;
+    private JLabel volumeTimerLabel;
     private PriceFluctuationTimer priceFluctuationTimer;
     private MarketEventTimer marketEventTimer;
     private TradingVolumeTimer tradingVolumeTimer;
     private javax.swing.Timer guiUpdateTimer;
+    
+    private volatile boolean pendingStockUpdate = false;
+    private Map<String, JLabel> priceLabels;
+    private Map<String, JLabel> volumeLabels;
     
     public StockMarketApplication() {
         initializeData();
@@ -28,6 +33,8 @@ public class StockMarketApplication extends JFrame {
     
     private void initializeData() {
         stocks = new HashMap<>();
+        priceLabels = new HashMap<>();
+        volumeLabels = new HashMap<>();
         
         stocks.put("AAPL", new StockData("Apple", 150.0));
         stocks.put("GOOGL", new StockData("Google", 2800.0));
@@ -52,11 +59,18 @@ public class StockMarketApplication extends JFrame {
         for (String symbol : stocks.keySet()) {
             StockData stock = stocks.get(symbol);
             stockDisplayPanel.add(new JLabel(symbol, JLabel.CENTER));
-            stockDisplayPanel.add(new JLabel("$" + String.format("%.2f", stock.getCurrentPrice()), JLabel.CENTER));
-            stockDisplayPanel.add(new JLabel(String.format("%,d", stock.getVolume()), JLabel.CENTER));
+            
+            JLabel priceLabel = new JLabel("$" + String.format("%.2f", stock.getCurrentPrice()), JLabel.CENTER);
+            JLabel volumeLabel = new JLabel(String.format("%,d", stock.getVolume()), JLabel.CENTER);
+            
+            priceLabels.put(symbol, priceLabel);
+            volumeLabels.put(symbol, volumeLabel);
+            
+            stockDisplayPanel.add(priceLabel);
+            stockDisplayPanel.add(volumeLabel);
         }
         
-        controlPanel = new JPanel(new GridLayout(4, 2, 5, 5));
+        controlPanel = new JPanel(new GridLayout(5, 2, 5, 5));
         controlPanel.setBorder(BorderFactory.createTitledBorder("Timer Controls"));
         
         startPricesButton = new JButton("Start Price Updates");
@@ -68,6 +82,7 @@ public class StockMarketApplication extends JFrame {
         
         priceTimerLabel = new JLabel("Price Timer: STOPPED");
         nextEventLabel = new JLabel("Next Event: Not scheduled");
+        volumeTimerLabel = new JLabel("Volume Timer: STOPPED");
         
         controlPanel.add(startPricesButton);
         controlPanel.add(stopPricesButton);
@@ -77,12 +92,14 @@ public class StockMarketApplication extends JFrame {
         controlPanel.add(stopVolumeButton);
         controlPanel.add(priceTimerLabel);
         controlPanel.add(nextEventLabel);
+        controlPanel.add(volumeTimerLabel);
+        controlPanel.add(new JLabel());
         
         add(statusLabel, BorderLayout.NORTH);
         add(stockDisplayPanel, BorderLayout.CENTER);
         add(controlPanel, BorderLayout.SOUTH);
         
-        setSize(660, 300);
+        setSize(660, 400);
         setLocationRelativeTo(null);
     }
     
@@ -96,6 +113,12 @@ public class StockMarketApplication extends JFrame {
     }
     
     private void updateTimerDisplays() {
+        boolean anyRunning = (priceFluctuationTimer != null && priceFluctuationTimer.isRunning()) ||
+                            (marketEventTimer != null && marketEventTimer.isRunning()) ||
+                            (tradingVolumeTimer != null && tradingVolumeTimer.isRunning());
+        
+        if (!anyRunning) return;
+        
         if (priceFluctuationTimer != null && priceFluctuationTimer.isRunning()) {
             int secondsRunning = priceFluctuationTimer.getSecondsRunning();
             int nextUpdate = 2 - (secondsRunning % 2);
@@ -107,6 +130,11 @@ public class StockMarketApplication extends JFrame {
             if (secondsToNext > 0) {
                 nextEventLabel.setText("Next Event: " + secondsToNext + " seconds");
             }
+        }
+        
+        if (tradingVolumeTimer != null && tradingVolumeTimer.isRunning()) {
+            int secondsToNext = tradingVolumeTimer.getSecondsToNextUpdate();
+            volumeTimerLabel.setText("Volume Timer: Next update in " + secondsToNext + "s");
         }
     }
     
@@ -157,22 +185,29 @@ public class StockMarketApplication extends JFrame {
     }
     
     public void updateStockDisplay() {
-        Component[] components = stockDisplayPanel.getComponents();
-        int componentIndex = 3; // Skip 3 headers now
-        
+        if (!pendingStockUpdate) {
+            pendingStockUpdate = true;
+            SwingUtilities.invokeLater(() -> {
+                performStockDisplayUpdate();
+                pendingStockUpdate = false;
+            });
+        }
+    }
+    
+    private void performStockDisplayUpdate() {
         for (String symbol : stocks.keySet()) {
-            if (componentIndex < components.length && components[componentIndex] instanceof JLabel) {
-                StockData stock = stocks.get(symbol);
-                JLabel priceLabel = (JLabel) components[componentIndex + 1];
-                JLabel volumeLabel = (JLabel) components[componentIndex + 2];
-                
+            StockData stock = stocks.get(symbol);
+            
+            JLabel priceLabel = priceLabels.get(symbol);
+            JLabel volumeLabel = volumeLabels.get(symbol);
+            
+            if (priceLabel != null) {
                 priceLabel.setText("$" + String.format("%.2f", stock.getCurrentPrice()));
+            }
+            if (volumeLabel != null) {
                 volumeLabel.setText(String.format("%,d", stock.getVolume()));
             }
-            componentIndex += 3; // Now 3 columns per stock
         }
-        
-        stockDisplayPanel.repaint();
     }
     
     public Map<String, StockData> getStocks() {

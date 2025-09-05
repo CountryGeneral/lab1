@@ -13,9 +13,21 @@ public class PriceFluctuationTimer extends TimerTask {
     }
     
     public void start() {
-        timer.scheduleAtFixedRate(this, 0, 2000);
-        running = true;
-        startTime = System.currentTimeMillis();
+        if (running) {
+            System.out.println("PriceFluctuationTimer already running - stop it first");
+            return;
+        }
+        if (timer != null) {
+            timer.cancel();
+            timer = new Timer("PriceTimer");
+        }
+        PriceFluctuationTimer newTask = new PriceFluctuationTimer(app);
+        newTask.timer = timer;
+        newTask.running = true;
+        newTask.startTime = System.currentTimeMillis();
+        timer.scheduleAtFixedRate(newTask, 0, 2000);
+        this.running = true;
+        this.startTime = newTask.startTime;
         SwingUtilities.invokeLater(() -> app.updatePriceTimerStatus("RUNNING (every 2s)"));
         System.out.println("PriceFluctuationTimer started - updates every 2 seconds");
     }
@@ -25,6 +37,7 @@ public class PriceFluctuationTimer extends TimerTask {
         updateStockPrices();
     }
     
+    
     private void updateStockPrices() {
         Map<String, StockData> stocks = app.getStocks();
         Random random = new Random();
@@ -33,11 +46,8 @@ public class PriceFluctuationTimer extends TimerTask {
             StockData stock = stocks.get(symbol);
             double currentPrice = stock.getCurrentPrice();
             
-            // Generate price change: -3% to +3%
             double changePercent = (random.nextGaussian() * 0.03);
             double newPrice = currentPrice * (1 + changePercent);
-            
-            // Round to 2 decimal places
             newPrice = Math.round(newPrice * 100.0) / 100.0;
             
             stock.setCurrentPrice(newPrice);
@@ -46,8 +56,7 @@ public class PriceFluctuationTimer extends TimerTask {
                             symbol, newPrice, changePercent * 100);
         }
         
-        // Update the GUI display on EDT
-        SwingUtilities.invokeLater(() -> app.updateStockDisplay());
+        app.updateStockDisplay();
     }
     
     public void stop() {

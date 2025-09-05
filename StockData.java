@@ -6,7 +6,7 @@ public class StockData {
     public StockData(String name, double currentPrice) {
         this.name = name;
         this.currentPrice = currentPrice;
-        this.volume = (int)(Math.random() * 100000) + 50000; // Random initial volume
+        this.volume = (int)(Math.random() * 100000) + 50000;
     }
     
     public String getName() {

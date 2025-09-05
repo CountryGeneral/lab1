@@ -6,22 +6,34 @@ public class TradingVolumeTimer extends TimerTask {
     private Timer timer;
     private boolean running = false;
     private Map<String, Integer> stockVolumes;
+    private long nextUpdateTime = 0;
     
     public TradingVolumeTimer(StockMarketApplication app) {
         this.app = app;
         this.timer = new Timer("TradingVolumeTimer");
         this.stockVolumes = new HashMap<>();
         
-        // Initialize volumes
         stockVolumes.put("AAPL", 100000);
         stockVolumes.put("GOOGL", 75000);
         stockVolumes.put("MSFT", 120000);
     }
     
     public void start() {
-        // Uses schedule with period - runs every 15 seconds with period
-        timer.schedule(this, 5000, 15000); // Start after 5s, repeat every 15s
-        running = true;
+        if (running) {
+            System.out.println("TradingVolumeTimer already running - stop it first");
+            return;
+        }
+        if (timer != null) {
+            timer.cancel();
+            timer = new Timer("TradingVolumeTimer");
+        }
+        TradingVolumeTimer newTask = new TradingVolumeTimer(app);
+        newTask.timer = timer;
+        newTask.running = true;
+        newTask.nextUpdateTime = System.currentTimeMillis() + 5000;
+        timer.schedule(newTask, 5000, 15000);
+        this.running = true;
+        this.nextUpdateTime = newTask.nextUpdateTime;
         System.out.println("TradingVolumeTimer started - updates every 15 seconds (periodic)");
     }
     
@@ -39,22 +51,29 @@ public class TradingVolumeTimer extends TimerTask {
         for (String symbol : stocks.keySet()) {
             StockData stock = stocks.get(symbol);
             int currentVolume = stock.getVolume();
+            double currentPrice = stock.getCurrentPrice();
             
-            // Volume can change by -20% to +30%
             double changePercent = (random.nextDouble() - 0.3) * 0.5;
             int newVolume = (int)(currentVolume * (1 + changePercent));
-            
-            // Keep volume reasonable
             newVolume = Math.max(10000, Math.min(500000, newVolume));
-            
             stock.setVolume(newVolume);
+            
+            // Volume impacts price: high volume = more price movement
+            double volumeImpact = (newVolume - currentVolume) / 100000.0;
+            double priceChange = volumeImpact * random.nextGaussian() * 0.5;
+            double newPrice = currentPrice + priceChange;
+            newPrice = Math.round(newPrice * 100.0) / 100.0;
+            stock.setCurrentPrice(newPrice);
             
             System.out.printf("Volume %s: %,d shares (%.1f%% change)%n", 
                             symbol, newVolume, changePercent * 100);
+            System.out.printf("Price %s: $%.2f (volume impact: %+.2f)%n", 
+                            symbol, newPrice, priceChange);
         }
         
-        // Update GUI
-        SwingUtilities.invokeLater(() -> app.updateStockDisplay());
+        app.updateStockDisplay();
+        
+        nextUpdateTime = System.currentTimeMillis() + 15000;
         
         System.out.println("=====================");
     }
@@ -63,12 +82,19 @@ public class TradingVolumeTimer extends TimerTask {
         if (timer != null) {
             timer.cancel();
             running = false;
+            nextUpdateTime = 0;
             System.out.println("TradingVolumeTimer stopped");
         }
     }
     
     public boolean isRunning() {
         return running;
+    }
+    
+    public int getSecondsToNextUpdate() {
+        if (!running || nextUpdateTime == 0) return 0;
+        long secondsRemaining = (nextUpdateTime - System.currentTimeMillis()) / 1000;
+        return Math.max(1, (int)secondsRemaining);
     }
     
     public Map<String, Integer> getVolumes() {
