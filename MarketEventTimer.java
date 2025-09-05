@@ -88,7 +88,6 @@ public class MarketEventTimer extends TimerTask {
         int eventIndex = random.nextInt(events.length);
         String event = events[eventIndex];
         
-        // Impact trading volumes for all stocks
         Map<String, StockData> stocks = app.getStocks();
         boolean positiveEvent = random.nextBoolean();
         int volumeChange = positiveEvent ? 20000 : -15000;

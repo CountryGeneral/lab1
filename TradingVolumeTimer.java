@@ -1,5 +1,4 @@
 import java.util.*;
-import javax.swing.SwingUtilities;
 
 public class TradingVolumeTimer extends TimerTask {
     private StockMarketApplication app;
@@ -30,7 +29,7 @@ public class TradingVolumeTimer extends TimerTask {
         running = true;
         nextUpdateTime = System.currentTimeMillis() + 5000;
         timer.schedule(this, 5000, 15000);
-        System.out.println("TradingVolumeTimer started - updates every 15 seconds (periodic)");
+        System.out.println("TradingVolumeTimer started - updates every 15 seconds");
     }
     
     @Override
@@ -54,7 +53,7 @@ public class TradingVolumeTimer extends TimerTask {
             newVolume = Math.max(10000, Math.min(500000, newVolume));
             stock.setVolume(newVolume);
             
-            // Volume impacts price: high volume = more price movement
+            // high volume = more price movement
             double volumeImpact = (newVolume - currentVolume) / 100000.0;
             double priceChange = volumeImpact * random.nextGaussian() * 0.5;
             double newPrice = currentPrice + priceChange;
