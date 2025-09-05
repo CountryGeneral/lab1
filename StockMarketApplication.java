@@ -11,10 +11,12 @@ public class StockMarketApplication extends JFrame {
     private JPanel controlPanel;
     private JButton startPricesButton, stopPricesButton;
     private JButton startEventsButton, stopEventsButton;
+    private JButton startVolumeButton, stopVolumeButton;
     private JLabel nextEventLabel;
     private JLabel priceTimerLabel;
     private PriceFluctuationTimer priceFluctuationTimer;
     private MarketEventTimer marketEventTimer;
+    private TradingVolumeTimer tradingVolumeTimer;
     private javax.swing.Timer guiUpdateTimer;
     
     public StockMarketApplication() {
@@ -54,13 +56,15 @@ public class StockMarketApplication extends JFrame {
             stockDisplayPanel.add(new JLabel(String.format("%,d", stock.getVolume()), JLabel.CENTER));
         }
         
-        controlPanel = new JPanel(new GridLayout(3, 2, 5, 5));
+        controlPanel = new JPanel(new GridLayout(4, 2, 5, 5));
         controlPanel.setBorder(BorderFactory.createTitledBorder("Timer Controls"));
         
         startPricesButton = new JButton("Start Price Updates");
         stopPricesButton = new JButton("Stop Price Updates");
         startEventsButton = new JButton("Start Market Events");
         stopEventsButton = new JButton("Stop Market Events");
+        JButton startVolumeButton = new JButton("Start Volume Updates");
+        JButton stopVolumeButton = new JButton("Stop Volume Updates");
         
         priceTimerLabel = new JLabel("Price Timer: STOPPED");
         nextEventLabel = new JLabel("Next Event: Not scheduled");
@@ -69,6 +73,8 @@ public class StockMarketApplication extends JFrame {
         controlPanel.add(stopPricesButton);
         controlPanel.add(startEventsButton);
         controlPanel.add(stopEventsButton);
+        controlPanel.add(startVolumeButton);
+        controlPanel.add(stopVolumeButton);
         controlPanel.add(priceTimerLabel);
         controlPanel.add(nextEventLabel);
         
@@ -83,6 +89,7 @@ public class StockMarketApplication extends JFrame {
     private void initializeTimers() {
         priceFluctuationTimer = new PriceFluctuationTimer(this);
         marketEventTimer = new MarketEventTimer(this);
+        tradingVolumeTimer = new TradingVolumeTimer(this);
         
         guiUpdateTimer = new javax.swing.Timer(1000, e -> updateTimerDisplays());
         guiUpdateTimer.start();
