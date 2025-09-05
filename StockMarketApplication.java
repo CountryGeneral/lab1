@@ -12,9 +12,6 @@ public class StockMarketApplication extends JFrame {
     public StockMarketApplication() {
         initializeData();
         setupGUI();
-        
-        System.out.println("Stock Market Application initialized");
-        System.out.println("Ready for timer implementation...");
     }
     
     private void initializeData() {
