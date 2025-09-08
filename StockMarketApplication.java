@@ -83,7 +83,7 @@ public class StockMarketApplication extends JFrame {
         buttonGrid.add(stopPricesButton);
         buttonGrid.add(startEventsButton);
         buttonGrid.add(stopEventsButton);
-        
+       
         JPanel tradePanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
         tradeButton = new JButton("Trade");
         tradeButton.setFont(new Font("Arial", Font.BOLD, 12));
@@ -107,8 +107,8 @@ public class StockMarketApplication extends JFrame {
         add(statusLabel, BorderLayout.NORTH);
         add(stockDisplayPanel, BorderLayout.CENTER);
         add(controlPanel, BorderLayout.SOUTH);
-        
         setSize(660, 350);
+
         setLocationRelativeTo(null);
     }
     
@@ -126,6 +126,8 @@ public class StockMarketApplication extends JFrame {
     private void updateTimerDisplays() {
         boolean anyRunning = (priceFluctuationTimer != null && priceFluctuationTimer.isRunning()) ||
                             (marketEventTimer != null && marketEventTimer.isRunning());
+
+
         
         if (!anyRunning) return;
         
@@ -181,6 +183,7 @@ public class StockMarketApplication extends JFrame {
             }
         });
         
+
         tradeButton.addActionListener(e -> {
             if (!tradeButton.isEnabled() || cooldownSeconds > 0) {
                 return;
@@ -277,7 +280,6 @@ public class StockMarketApplication extends JFrame {
     public PriceFluctuationTimer getPriceTimer() {
         return priceFluctuationTimer;
     }
-    
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
             StockMarketApplication app = new StockMarketApplication();
