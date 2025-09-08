@@ -69,29 +69,40 @@ public class StockMarketApplication extends JFrame {
             stockDisplayPanel.add(volumeLabel);
         }
         
-        controlPanel = new JPanel(new GridLayout(4, 2, 5, 5));
+        controlPanel = new JPanel();
+        controlPanel.setLayout(new BoxLayout(controlPanel, BoxLayout.Y_AXIS));
         controlPanel.setBorder(BorderFactory.createTitledBorder("Market Controls"));
         
+        JPanel buttonGrid = new JPanel(new GridLayout(2, 2, 5, 5));
         startPricesButton = new JButton("Start Price Updates");
         stopPricesButton = new JButton("Stop Price Updates");
         startEventsButton = new JButton("Start Market Events");
         stopEventsButton = new JButton("Stop Market Events");
+        
+        buttonGrid.add(startPricesButton);
+        buttonGrid.add(stopPricesButton);
+        buttonGrid.add(startEventsButton);
+        buttonGrid.add(stopEventsButton);
+        
+        JPanel tradePanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
         tradeButton = new JButton("Trade");
         tradeButton.setFont(new Font("Arial", Font.BOLD, 12));
         tradeButton.setBackground(new Color(50, 150, 50));
         tradeButton.setForeground(Color.WHITE);
+        tradeButton.setPreferredSize(new Dimension(200, 30));
+        tradePanel.add(tradeButton);
         
+        JPanel statusPanel = new JPanel(new GridLayout(1, 2, 5, 5));
         priceTimerLabel = new JLabel("Price Timer: STOPPED");
         nextEventLabel = new JLabel("Next Event: Not scheduled");
+        statusPanel.add(priceTimerLabel);
+        statusPanel.add(nextEventLabel);
         
-        controlPanel.add(startPricesButton);
-        controlPanel.add(stopPricesButton);
-        controlPanel.add(startEventsButton);
-        controlPanel.add(stopEventsButton);
-        controlPanel.add(tradeButton);
-        controlPanel.add(new JLabel());
-        controlPanel.add(priceTimerLabel);
-        controlPanel.add(nextEventLabel);
+        controlPanel.add(buttonGrid);
+        controlPanel.add(Box.createRigidArea(new Dimension(0, 10)));
+        controlPanel.add(tradePanel);
+        controlPanel.add(Box.createRigidArea(new Dimension(0, 10)));
+        controlPanel.add(statusPanel);
         
         add(statusLabel, BorderLayout.NORTH);
         add(stockDisplayPanel, BorderLayout.CENTER);
