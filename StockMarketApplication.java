@@ -9,14 +9,15 @@ public class StockMarketApplication extends JFrame {
     private JPanel controlPanel;
     private JButton startPricesButton, stopPricesButton;
     private JButton startEventsButton, stopEventsButton;
-    private JButton startVolumeButton, stopVolumeButton;
+    private JButton tradeButton; 
     private JLabel nextEventLabel;
     private JLabel priceTimerLabel;
-    private JLabel volumeTimerLabel;
     private PriceFluctuationTimer priceFluctuationTimer;
     private MarketEventTimer marketEventTimer;
     private TradingVolumeTimer tradingVolumeTimer;
     private javax.swing.Timer guiUpdateTimer;
+    private javax.swing.Timer cooldownTimer;
+    private int cooldownSeconds = 0;
     
     private volatile boolean pendingStockUpdate = false;
     private Map<String, JLabel> priceLabels;
@@ -40,11 +41,11 @@ public class StockMarketApplication extends JFrame {
     }
     
     private void setupGUI() {
-        setTitle("Stock Market Simulation - Lab 1");
+        setTitle("Stock Market Trading Simulation");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLayout(new BorderLayout());
         
-        statusLabel = new JLabel("Market Status: STARTING...", JLabel.CENTER);
+        statusLabel = new JLabel("Market Status: READY", JLabel.CENTER);
         statusLabel.setFont(new Font("Arial", Font.BOLD, 14));
         
         stockDisplayPanel = new JPanel(new GridLayout(4, 3, 10, 10));
@@ -68,36 +69,46 @@ public class StockMarketApplication extends JFrame {
             stockDisplayPanel.add(volumeLabel);
         }
         
-        controlPanel = new JPanel(new GridLayout(5, 2, 5, 5));
-        controlPanel.setBorder(BorderFactory.createTitledBorder("Timer Controls"));
+        controlPanel = new JPanel();
+        controlPanel.setLayout(new BoxLayout(controlPanel, BoxLayout.Y_AXIS));
+        controlPanel.setBorder(BorderFactory.createTitledBorder("Market Controls"));
         
+        JPanel buttonGrid = new JPanel(new GridLayout(2, 2, 5, 5));
         startPricesButton = new JButton("Start Price Updates");
         stopPricesButton = new JButton("Stop Price Updates");
         startEventsButton = new JButton("Start Market Events");
         stopEventsButton = new JButton("Stop Market Events");
-        startVolumeButton = new JButton("Start Volume Updates");
-        stopVolumeButton = new JButton("Stop Volume Updates");
         
+        buttonGrid.add(startPricesButton);
+        buttonGrid.add(stopPricesButton);
+        buttonGrid.add(startEventsButton);
+        buttonGrid.add(stopEventsButton);
+       
+        JPanel tradePanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        tradeButton = new JButton("Trade");
+        tradeButton.setFont(new Font("Arial", Font.BOLD, 12));
+        tradeButton.setBackground(new Color(50, 150, 50));
+        tradeButton.setForeground(Color.WHITE);
+        tradeButton.setPreferredSize(new Dimension(200, 30));
+        tradePanel.add(tradeButton);
+        
+        JPanel statusPanel = new JPanel(new GridLayout(1, 2, 5, 5));
         priceTimerLabel = new JLabel("Price Timer: STOPPED");
         nextEventLabel = new JLabel("Next Event: Not scheduled");
-        volumeTimerLabel = new JLabel("Volume Timer: STOPPED");
+        statusPanel.add(priceTimerLabel);
+        statusPanel.add(nextEventLabel);
         
-        controlPanel.add(startPricesButton);
-        controlPanel.add(stopPricesButton);
-        controlPanel.add(startEventsButton);
-        controlPanel.add(stopEventsButton);
-        controlPanel.add(startVolumeButton);
-        controlPanel.add(stopVolumeButton);
-        controlPanel.add(priceTimerLabel);
-        controlPanel.add(nextEventLabel);
-        controlPanel.add(volumeTimerLabel);
-        controlPanel.add(new JLabel());
+        controlPanel.add(buttonGrid);
+        controlPanel.add(Box.createRigidArea(new Dimension(0, 10)));
+        controlPanel.add(tradePanel);
+        controlPanel.add(Box.createRigidArea(new Dimension(0, 10)));
+        controlPanel.add(statusPanel);
         
         add(statusLabel, BorderLayout.NORTH);
         add(stockDisplayPanel, BorderLayout.CENTER);
         add(controlPanel, BorderLayout.SOUTH);
-        
-        setSize(660, 400);
+        setSize(660, 350);
+
         setLocationRelativeTo(null);
     }
     
@@ -108,12 +119,15 @@ public class StockMarketApplication extends JFrame {
         
         guiUpdateTimer = new javax.swing.Timer(1000, e -> updateTimerDisplays());
         guiUpdateTimer.start();
+        
+        cooldownTimer = new javax.swing.Timer(1000, e -> updateCooldown());
     }
     
     private void updateTimerDisplays() {
         boolean anyRunning = (priceFluctuationTimer != null && priceFluctuationTimer.isRunning()) ||
-                            (marketEventTimer != null && marketEventTimer.isRunning()) ||
-                            (tradingVolumeTimer != null && tradingVolumeTimer.isRunning());
+                            (marketEventTimer != null && marketEventTimer.isRunning());
+
+
         
         if (!anyRunning) return;
         
@@ -129,10 +143,18 @@ public class StockMarketApplication extends JFrame {
                 nextEventLabel.setText("Next Event: " + secondsToNext + " seconds");
             }
         }
-        
-        if (tradingVolumeTimer != null && tradingVolumeTimer.isRunning()) {
-            int secondsToNext = tradingVolumeTimer.getSecondsToNextUpdate();
-            volumeTimerLabel.setText("Volume Timer: Next update in " + secondsToNext + "s");
+    }
+    
+    private void updateCooldown() {
+        cooldownSeconds--;
+        if (cooldownSeconds > 0) {
+            tradeButton.setText("Cooldown: " + cooldownSeconds + "s");
+            tradeButton.setBackground(new Color(150, 50, 50));
+        } else {
+            cooldownTimer.stop();
+            tradeButton.setText("Trade");
+            tradeButton.setEnabled(true);
+            tradeButton.setBackground(new Color(50, 150, 50));
         }
     }
     
@@ -161,15 +183,58 @@ public class StockMarketApplication extends JFrame {
             }
         });
         
-        startVolumeButton.addActionListener(e -> {
-            if (tradingVolumeTimer != null) {
-                tradingVolumeTimer.start();
+
+        tradeButton.addActionListener(e -> {
+            if (!tradeButton.isEnabled() || cooldownSeconds > 0) {
+                return;
+            }
+            
+            String input = JOptionPane.showInputDialog(
+                this,
+                "Enter trade volume:\n" +
+                "+ to buy (e.g.: +5000)\n" +
+                "- to sell (e.g.: -3000)",
+                "Trade",
+                JOptionPane.PLAIN_MESSAGE
+            );
+            
+            if (input == null || input.trim().isEmpty()) {
+                return;
+            }
+            
+            try {
+                int volumeChange = Integer.parseInt(input.trim());
+                
+
+                tradeButton.setEnabled(false);
+                tradeButton.setText("Processing...");
+                tradeButton.setBackground(new Color(150, 150, 50));
+                
+                if (tradingVolumeTimer != null) {
+                    tradingVolumeTimer.executeTrade(volumeChange);
+                }
+                
+            } catch (NumberFormatException ex) {
+                JOptionPane.showMessageDialog(
+                    this,
+                    "Wrong number format. Use integers with a + or -",
+                    "ERROR",
+                    JOptionPane.ERROR_MESSAGE
+                );
             }
         });
-        
-        stopVolumeButton.addActionListener(e -> {
-            if (tradingVolumeTimer != null) {
-                tradingVolumeTimer.stop();
+    }
+    
+    public void startCooldown() {
+        cooldownSeconds = 20;
+        cooldownTimer.start();
+    }
+    
+    public void updateTradeButtonStatus(String status) {
+        SwingUtilities.invokeLater(() -> {
+            tradeButton.setText(status);
+            if (status.equals("Processing...")) {
+                tradeButton.setBackground(new Color(150, 150, 50));
             }
         });
     }
@@ -212,6 +277,9 @@ public class StockMarketApplication extends JFrame {
         return stocks;
     }
     
+    public PriceFluctuationTimer getPriceTimer() {
+        return priceFluctuationTimer;
+    }
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
             StockMarketApplication app = new StockMarketApplication();
