@@ -184,45 +184,58 @@ public class StockMarketApplication extends JFrame {
         });
         
 
-        tradeButton.addActionListener(e -> {
-            if (!tradeButton.isEnabled() || cooldownSeconds > 0) {
-                return;
+    tradeButton.addActionListener(e -> {
+        if (!tradeButton.isEnabled() || cooldownSeconds > 0) {
+            return;
+        }
+        
+        // Stop price timer IMMEDIATELY
+        if (priceFluctuationTimer != null && priceFluctuationTimer.isRunning()) {
+            priceFluctuationTimer.stop();
+            updatePriceTimerStatus("PAUSED (Trading)");
+        }
+        
+        String input = JOptionPane.showInputDialog(
+            this,
+            "Enter trade volume:\n" +
+            "+ to buy (e.g.: +5000)\n" +
+            "- to sell (e.g.: -3000)",
+            "Trade",
+            JOptionPane.PLAIN_MESSAGE
+        );
+        
+        if (input == null || input.trim().isEmpty()) {
+            // Resume price timer if cancelled
+            if (priceFluctuationTimer != null && !priceFluctuationTimer.isRunning()) {
+                priceFluctuationTimer.start();
+            }
+            return;
+        }
+        
+        try {
+            int volumeChange = Integer.parseInt(input.trim());
+            
+            tradeButton.setEnabled(false);
+            tradeButton.setText("Processing...");
+            tradeButton.setBackground(new Color(150, 150, 50));
+            
+            if (tradingVolumeTimer != null) {
+                tradingVolumeTimer.executeTrade(volumeChange);
             }
             
-            String input = JOptionPane.showInputDialog(
+        } catch (NumberFormatException ex) {
+            // Resume price timer if error
+            if (priceFluctuationTimer != null && !priceFluctuationTimer.isRunning()) {
+                priceFluctuationTimer.start();
+            }
+            JOptionPane.showMessageDialog(
                 this,
-                "Enter trade volume:\n" +
-                "+ to buy (e.g.: +5000)\n" +
-                "- to sell (e.g.: -3000)",
-                "Trade",
-                JOptionPane.PLAIN_MESSAGE
+                "Wrong number format. Use integers with a + or -",
+                "ERROR",
+                JOptionPane.ERROR_MESSAGE
             );
-            
-            if (input == null || input.trim().isEmpty()) {
-                return;
-            }
-            
-            try {
-                int volumeChange = Integer.parseInt(input.trim());
-                
-
-                tradeButton.setEnabled(false);
-                tradeButton.setText("Processing...");
-                tradeButton.setBackground(new Color(150, 150, 50));
-                
-                if (tradingVolumeTimer != null) {
-                    tradingVolumeTimer.executeTrade(volumeChange);
-                }
-                
-            } catch (NumberFormatException ex) {
-                JOptionPane.showMessageDialog(
-                    this,
-                    "Wrong number format. Use integers with a + or -",
-                    "ERROR",
-                    JOptionPane.ERROR_MESSAGE
-                );
-            }
-        });
+        }
+    });
     }
     
     public void startCooldown() {

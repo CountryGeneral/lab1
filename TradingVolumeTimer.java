@@ -22,8 +22,6 @@ public class TradingVolumeTimer {
         System.out.println("User's trade: " + 
                           (volumeChange > 0 ? "+" : "") + volumeChange);
         
-        stopMarket();
-        
         timer.schedule(new TimerTask() {
             @Override
             public void run() {
@@ -43,21 +41,7 @@ public class TradingVolumeTimer {
             public void run() {
                 resumeMarketAndStartCooldown();
             }
-        }, 10000);
-    }
-    
-    private void stopMarket() {
-        System.out.println("\nMarket halt to process the trade.");
-        
-        PriceFluctuationTimer priceTimer = app.getPriceTimer();
-        if (priceTimer != null && priceTimer.isRunning()) {
-            priceTimer.stop();
-            System.out.println("  Price fluctuations halted");
-        }
-        
-        SwingUtilities.invokeLater(() -> {
-            app.updatePriceTimerStatus("PAUSED (Trading)");
-        });
+        }, 7500);
     }
     
     private void processVolumeChanges() {
