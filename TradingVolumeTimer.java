@@ -43,7 +43,7 @@ public class TradingVolumeTimer {
             public void run() {
                 resumeMarketAndStartCooldown();
             }
-        }, 5000);
+        }, 10000);
     }
     
     private void stopMarket() {
