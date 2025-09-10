@@ -189,7 +189,7 @@ public class StockMarketApplication extends JFrame {
             return;
         }
         
-        // Stop price timer IMMEDIATELY
+
         if (priceFluctuationTimer != null && priceFluctuationTimer.isRunning()) {
             priceFluctuationTimer.stop();
             updatePriceTimerStatus("PAUSED (Trading)");
@@ -205,7 +205,6 @@ public class StockMarketApplication extends JFrame {
         );
         
         if (input == null || input.trim().isEmpty()) {
-            // Resume price timer if cancelled
             if (priceFluctuationTimer != null && !priceFluctuationTimer.isRunning()) {
                 priceFluctuationTimer.start();
             }
@@ -224,7 +223,6 @@ public class StockMarketApplication extends JFrame {
             }
             
         } catch (NumberFormatException ex) {
-            // Resume price timer if error
             if (priceFluctuationTimer != null && !priceFluctuationTimer.isRunning()) {
                 priceFluctuationTimer.start();
             }
